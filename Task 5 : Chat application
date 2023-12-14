@@ -1,0 +1,74 @@
+#client code
+import socket
+import threading
+
+def receive_messages(client_socket):
+    while True:
+        try:
+            # Receive and display messages from the server
+            message = client_socket.recv(1024).decode('utf-8')
+            print(message)
+        except:
+            break
+
+def send_messages(client_socket):
+    while True:
+        # Send messages to the server
+        message = input()
+        client_socket.send(message.encode('utf-8'))
+
+# Client setup
+client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+client.connect(('127.0.0.1', 5555))
+
+# Start separate threads for sending and receiving messages
+receive_thread = threading.Thread(target=receive_messages, args=(client,))
+send_thread = threading.Thread(target=send_messages, args=(client,))
+
+receive_thread.start()
+send_thread.start()
+
+#server code
+
+import socket
+import threading
+
+def handle_client(client_socket, address):
+    print(f"Accepted connection from {address}")
+
+    while True:
+        # Receive data from the client
+        data = client_socket.recv(1024).decode('utf-8')
+
+        if not data:
+            break
+
+        print(f"Received from {address}: {data}")
+
+        # Broadcast the message to all connected clients
+        broadcast(f"{address}: {data}")
+
+    print(f"Connection from {address} closed.")
+    client_socket.close()
+
+def broadcast(message):
+    for client in clients:
+        client.send(message.encode('utf-8'))
+
+# Server setup
+server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+server.bind(('0.0.0.0', 5555))
+server.listen(5)
+
+print("Server listening on port 5555")
+
+clients = []
+
+while True:
+    # Accept client connections
+    client_socket, addr = server.accept()
+    clients.append(client_socket)
+
+    # Start a new thread for each client
+    client_handler = threading.Thread(target=handle_client, args=(client_socket, addr))
+    client_handler.start()
