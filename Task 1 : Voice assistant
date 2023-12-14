@@ -1,0 +1,61 @@
+import speech_recognition as sr
+import pyttsx3
+import datetime
+import webbrowser
+
+def greet():
+    return "Hello! How can I assist you today?"
+
+def get_time():
+    now = datetime.datetime.now()
+    return f"The current time is {now.strftime('%H:%M')}."
+
+def search_web(query):
+    url = f"https://www.google.com/search?q={query}"
+    webbrowser.open(url)
+
+def main():
+    # Initialize the text-to-speech engine
+    engine = pyttsx3.init()
+
+    # Set up the speech recognition
+    recognizer = sr.Recognizer()
+
+    # Greet the user
+    engine.say(greet())
+    engine.runAndWait()
+
+    while True:
+        with sr.Microphone() as source:
+            print("Listening...")
+            audio = recognizer.listen(source)
+
+        try:
+            print("Recognizing...")
+            command = recognizer.recognize_google(audio).lower()
+            print(f"You said: {command}")
+
+            # Perform actions based on user commands
+            if "hello" in command:
+                engine.say(greet())
+            elif "time" in command:
+                engine.say(get_time())
+            elif "search" in command:
+                query = command.replace("search", "").strip()
+                engine.say(f"Searching the web for {query}.")
+                search_web(query)
+            elif "exit" in command:
+                engine.say("Goodbye!")
+                break
+            else:
+                engine.say("I'm sorry, I didn't understand that.")
+
+            engine.runAndWait()
+
+        except sr.UnknownValueError:
+            print("Sorry, could not understand audio.")
+        except sr.RequestError as e:
+            print(f"Could not request results from Google Speech Recognition service; {e}")
+
+if __name__ == "__main__":
+    main()
